@@ -31,7 +31,7 @@ namespace pseget
                 .CreateLogger();
 
             Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(async option =>
+                .WithParsed(option =>
                 {
                     Program.pseGetOption = option;
                     var fromDate = DateTime.Today;
@@ -39,14 +39,15 @@ namespace pseget
 
                     if (!option.DateRange.Equals("today", StringComparison.OrdinalIgnoreCase))
                     {
-                        var matches = new Regex(@"^((0?[1-9]|[12][0-9]|3[01])[- /.](0?[1-9]|1[012])[- /.](20)\d\d):((0?[1-9]|[12][0-9]|3[01])[- /.](0?[1-9]|1[012])[- /.](20)\d\d)$")
-                            .Matches(option.DateRange);
-                        if (matches.Count == 0)
+                        //var matches = new Regex(@"^((0?[1-9]|[12][0-9]|3[01])[- /.](0?[1-9]|1[012])[- /.](20)\d\d):((0?[1-9]|[12][0-9]|3[01])[- /.](0?[1-9]|1[012])[- /.](20)\d\d)$")
+                        //    .Matches(option.DateRange);
+                        var dateRange = option.DateRange.Split(':');
+                        if (dateRange.Length == 0)
                         {
                             throw new Exception($"{option.DateRange} is not a valid date range.");
                         }
-                        fromDate = DateTime.Parse(matches.First().Groups[1].Value);
-                        toDate = DateTime.Parse(matches.First().Groups[5].Value);
+                        fromDate = DateTime.Parse(dateRange[0].Trim());
+                        toDate = DateTime.Parse(dateRange[1].Trim());
                     }
 
                     try

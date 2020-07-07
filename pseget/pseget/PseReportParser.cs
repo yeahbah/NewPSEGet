@@ -33,7 +33,7 @@ namespace pseget
             // match groups
             // group 0: matched line, ASIA UNITED AUB 46 46.9 46.75 46.75 46.05 46.05 6,000 277,200 -            
             // group 1: symbol
-            var pattern = @"(\b[A-Z0-9]+\b)\s+((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){9}";
+            var pattern = @"(\b[A-Z0-9]+\b)\s+((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){9}(-?)";
             var matches = new Regex(pattern).Matches(pdfText);
             if (matches.Count == 0) return null;
 
@@ -41,19 +41,29 @@ namespace pseget
             foreach (var match in matches.AsEnumerable())
             {
                 var line = match.Groups[0].Value.Trim();
+                var stockSymbol = match.Groups[1].Value.Trim();
                 var numbers = line
                     .Split(' ')
                     .Reverse()
                     .Take(9)
                     .Select(x => x.Trim())
+                    .Select(x =>
+                    {
+                        if (x.Contains("\n"))
+                        {
+                            return x.Split("\n")[1];
+                        }
+                        else
+                        {
+                            return x;
+                        }
+                    })
                     .ToArray();
 
                 // skip stocks that did not open
-                if (numbers[6] == "-") continue;
+                if (numbers[6] == "-") continue;                
 
                 decimal amount = 0;
-                var stockSymbol = match.Groups[1].Value.Trim();
-
                 Log.Debug(line);
 
                 var stock = new StockModel
@@ -189,43 +199,49 @@ namespace pseget
             var pattern = @"F I N A N C I A L S((.|\n)+)FINANCIALS SECTOR TOTAL VOLUME";
             var matchText = Regex.Match(pdfText, pattern).Value;
             var sector = indeces.SingleOrDefault(index => index.Symbol == Financials);
+            var stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocks
-                .Where(stock => GetStockName(stock.Symbol, matchText) != "")
+                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"I N D U S T R I A L((.|\n)+)INDUSTRIAL SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Industrials);
+            stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocks
-                .Where(stock => GetStockName(stock.Symbol, matchText) != "")
+                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"H O L D I N G   F I R M S((.|\n)+)HOLDING FIRMS SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Holding);
+            stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocks
-                .Where(stock => GetStockName(stock.Symbol, matchText) != "")
+                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"P R O P E R T Y((.|\n)+)PROPERTY SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Property);
+            stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocks
-                .Where(stock => GetStockName(stock.Symbol, matchText) != "")
+                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"S E R V I C E S((.|\n)+)SERVICES SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Services);
+            stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocks
-                .Where(stock => GetStockName(stock.Symbol, matchText) != "")
+                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"M I N I N G   &   O I L((.|\n)+)MINING & OIL SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Mining);
+            stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocks
-                .Where(stock => GetStockName(stock.Symbol, matchText) != "")
+                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
                 .Sum(stock => stock.NetForeignBuy);
         }
     }
