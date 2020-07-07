@@ -18,6 +18,6 @@
 
 		public decimal Value { get; set; }
 
-		public decimal? NetForeignBuy { get; set; }
+		public decimal NetForeignBuy { get; set; }
 	}
 }

@@ -13,7 +13,10 @@ namespace pseget
         [Option('j', "report", Required = false, Default = ".", HelpText = "Generate a JSON report file in the specified location, e.g. -j c:\\reports.")]
         public string JsonReportLocation { get; set; }
 
-        [Option('n', "include-name", Default = false, HelpText = "Include the stock name in the result")]
+        [Option('n', "include-name", Default = false, HelpText = "Include the stock name in the CSV file")]
         public bool IncludeStockName { get; set; }
+
+        [Option('o', "output-location", Default = ".", HelpText = "The location where the csv file will be saved.")]
+        public string OutputLocation { get; set; }
     }
 }

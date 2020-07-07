@@ -1,24 +1,39 @@
 ﻿using CommandLine;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using Microsoft.Extensions.Configuration;
+using Serilog;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.IO;
-using iText;
-using iText.Kernel.Pdf.Canvas.Parser;
-using iText.Kernel.Pdf;
-using System.Text;
 
 namespace pseget
 {
     class Program
     {
+        private static Options pseGetOption;
+
         static void Main(string[] args)
         {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(configuration)
+                .CreateLogger();
+
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed(async option =>
                 {
+                    Program.pseGetOption = option;
                     var fromDate = DateTime.Today;
                     var toDate = DateTime.Today;
 
@@ -34,9 +49,18 @@ namespace pseget
                         toDate = DateTime.Parse(matches.First().Groups[5].Value);
                     }
 
-                    await DownloadPdfReport(option.SourceUrl, fromDate, toDate);
+                    try
+                    {
+                        DownloadPdfReport(option.SourceUrl, fromDate, toDate).GetAwaiter().GetResult();
+                        Log.Information("Download complete.");
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, e.Message);
+                        throw;
+                    }
+                    
                 });
-            Console.ReadLine();
         }
 
         static async Task DownloadPdfReport(string baseUrl, DateTime fromDate, DateTime toDate)
@@ -51,13 +75,17 @@ namespace pseget
             {
                 var pdfFile = $"stockQuotes_{downloadDate:MMddyyyy}.pdf";
                 var downloadUrl = Path.Combine(baseUrl, pdfFile);
+
+                Log.Information($"Downloading from {baseUrl}...");
+
                 var response = await client.GetAsync(downloadUrl);
                 if (response.StatusCode != System.Net.HttpStatusCode.OK)
                 {
-                    Console.WriteLine(response.ReasonPhrase);                    
+                    Log.Warning(response.ReasonPhrase);                    
                 }
                 else
                 {
+                    Log.Information($"Converting {pdfFile} to CSV...");
                     var bytes = await response.Content.ReadAsByteArrayAsync();
                     var pdfStream = new MemoryStream(bytes);
 
@@ -72,6 +100,11 @@ namespace pseget
                     }
                     var parser = new PseReportParser();
                     var pseModel = parser.Parse(sb.ToString());
+                    pseModel.TradeDate = downloadDate;
+                    
+                    var fileName = Path.Combine(Program.pseGetOption.OutputLocation, $"stockQuotes_{pseModel.TradeDate:MMddyyyy}.csv");
+                    await Converter.ToCsv(pseModel, fileName, Program.pseGetOption.IncludeStockName);
+                    Log.Information("Done.");
 
                 }
                 downloadDate = downloadDate.AddDays(1);

@@ -6,7 +6,13 @@ namespace pseget.Test
     public class PseReportParserTest
     {
         [Fact]
-        public void Test1()
+        public void UnopenedStocksShouldNotBeIncluded()
+        {
+
+        }
+
+        [Fact]
+        public void DataCorrectnessTest()
         {
 
         }
