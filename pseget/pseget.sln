@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30225.117
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pseget", "pseget\pseget.csproj", "{0FF0BBEA-EB64-48A1-B389-71EB5A756799}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pseget.Test", "pseget.Test\pseget.Test.csproj", "{14DA08CA-28B8-40B1-AEB4-8486764669FA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0FF0BBEA-EB64-48A1-B389-71EB5A756799}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FF0BBEA-EB64-48A1-B389-71EB5A756799}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FF0BBEA-EB64-48A1-B389-71EB5A756799}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FF0BBEA-EB64-48A1-B389-71EB5A756799}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14DA08CA-28B8-40B1-AEB4-8486764669FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14DA08CA-28B8-40B1-AEB4-8486764669FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14DA08CA-28B8-40B1-AEB4-8486764669FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14DA08CA-28B8-40B1-AEB4-8486764669FA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {787F7248-AFC1-4880-81AA-66DD061C2F7E}
+	EndGlobalSection
+EndGlobal

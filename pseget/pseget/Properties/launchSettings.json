@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "pseget": {
+      "commandName": "Project",
+      "commandLineArgs": "-r today -j ."
+    }
+  }
+}
