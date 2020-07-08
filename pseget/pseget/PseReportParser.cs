@@ -20,7 +20,7 @@ namespace pseget
         {
             var stocks = GetStocks(pdfText).ToList();
             var indeces = GetIndeces(pdfText);
-            CalculateIndexNfb(stocks, indeces, pdfText);
+            CalculateIndexNfb(indeces, pdfText);
             stocks.AddRange(indeces);
             return new PseDocumentModel
             {
@@ -53,10 +53,7 @@ namespace pseget
                         {
                             return x.Split("\n")[1];
                         }
-                        else
-                        {
-                            return x;
-                        }
+                        return x;
                     })
                     .ToArray();
 
@@ -194,54 +191,48 @@ namespace pseget
 
         }
 
-        private void CalculateIndexNfb(IEnumerable<StockModel> stocks, IEnumerable<StockModel> indeces, string pdfText)
+        private void CalculateIndexNfb(IEnumerable<StockModel> indeces, string pdfText)
         {            
             var pattern = @"F I N A N C I A L S((.|\n)+)FINANCIALS SECTOR TOTAL VOLUME";
             var matchText = Regex.Match(pdfText, pattern).Value;
             var sector = indeces.SingleOrDefault(index => index.Symbol == Financials);
             var stocksInSector = GetStocks(matchText);
-            sector.NetForeignBuy = stocks
-                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
+            sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"I N D U S T R I A L((.|\n)+)INDUSTRIAL SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Industrials);
             stocksInSector = GetStocks(matchText);
-            sector.NetForeignBuy = stocks
-                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
+            sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"H O L D I N G   F I R M S((.|\n)+)HOLDING FIRMS SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Holding);
             stocksInSector = GetStocks(matchText);
-            sector.NetForeignBuy = stocks
-                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
+            sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"P R O P E R T Y((.|\n)+)PROPERTY SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Property);
             stocksInSector = GetStocks(matchText);
-            sector.NetForeignBuy = stocks
-                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
+            sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"S E R V I C E S((.|\n)+)SERVICES SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Services);
             stocksInSector = GetStocks(matchText);
-            sector.NetForeignBuy = stocks
-                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
+            sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"M I N I N G   &   O I L((.|\n)+)MINING & OIL SECTOR TOTAL VOLUME";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Mining);
             stocksInSector = GetStocks(matchText);
-            sector.NetForeignBuy = stocks
-                .Where(stock => stocksInSector.Any(s => s.Symbol == stock.Symbol))
+            sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
         }
     }

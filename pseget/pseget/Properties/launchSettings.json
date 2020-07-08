@@ -2,7 +2,7 @@
   "profiles": {
     "pseget": {
       "commandName": "Project",
-      "commandLineArgs": "-r 7/1/2020:7/6/2020 -j . "
+      "commandLineArgs": "-r today -j . "
     }
   }
 }
