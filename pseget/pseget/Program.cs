@@ -95,7 +95,7 @@ namespace pseget
             }
             var parser = new PseReportParser();
             var pseModel = parser.Parse(sb.ToString());
-            pseModel.TradeDate = tradeDate;
+            pseModel.TradeDate = tradeDate;            
 
             var fileName = Path.Combine(Program.pseGetOption.OutputLocation, $"stockQuotes_{pseModel.TradeDate:MMddyyyy}.csv");
             await Converter.ToCsv(pseModel, fileName, Program.pseGetOption.IncludeStockName);
@@ -104,7 +104,9 @@ namespace pseget
         private static async Task<byte[]> DownloadReport(DateTime reportDate)
         {
             var client = new HttpClient();
-            var pdfFile = $"stockQuotes_{reportDate:MMddyyyy}.pdf";
+            //var pdfFile = $"stockQuotes_{reportDate:MMddyyyy}.pdf";
+            //new file name: August 24, 2021-EOD1.pdf
+            var pdfFile = reportDate.ToString("MMMM dd, yyyy") + "-EOD1.pdf";// "August 24, 2021-EOD1.pdf";
             var downloadUrl = Path.Combine(pseGetOption.SourceUrl, pdfFile);
 
             Log.Information($"Downloading {downloadUrl}...");

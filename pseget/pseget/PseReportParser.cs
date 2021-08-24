@@ -82,7 +82,7 @@ namespace pseget
 
         private IEnumerable<StockModel> GetIndeces(string pdfText)
         {
-            var pattern = @"(Financials|Industrials|Holding Firms|Property|Services|Mining & Oil|PSEi|All Shares)\s+(((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){8}|((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){6})";
+            var pattern = @"(Financials|Industrials|Holding Firms|Property|Services|Mining & Oil|PSEI|All Shares)\s+(((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){8}|((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){6})";
             var matches = Regex.Matches(pdfText, pattern);
             if (matches.Count != 8) throw new Exception("Unable to parse index values");
 
@@ -96,16 +96,16 @@ namespace pseget
                         .Reverse()
                         .ToArray();
                 var netForeign = 0m;
-                if (description == "PSEi" || description == "All Shares")
+                if (description == "PSEI" || description == "All Shares")
                 {
                     var temp = numbers
                         .Take(6)
                         .Select(x => x.Trim())
                         .ToList();
 
-                    if (description == "PSEi")
+                    if (description == "PSEI")
                     {
-                        var grandTotal = Regex.Match(pdfText, @"(GRAND TOTAL)\s+(((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){8}|((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){2})");
+                        var grandTotal = Regex.Match(pdfText, @"(GRAND TOTAL)(((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){8}|((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){2})");
                         if (!grandTotal.Success) throw new Exception("Unable to find GRAND TOTAL");
                         var totals = grandTotal.Groups[2].Value.Split(' ');
                         temp.Insert(0, totals[1].Trim()); // psei value
@@ -176,7 +176,7 @@ namespace pseget
                 "Services" => Services,
                 "Mining & Oil" => Mining,
                 "All Shares" => AllShares,
-                "PSEi" => PSEi,
+                "PSEI" => PSEi,
                 _ => throw new InvalidOperationException($"{indexName} is unknown")
             };
         }
@@ -193,42 +193,42 @@ namespace pseget
 
         private void CalculateIndexNfb(IEnumerable<StockModel> indeces, string pdfText)
         {            
-            var pattern = @"F I N A N C I A L S((.|\n)+)FINANCIALS SECTOR TOTAL VOLUME";
+            var pattern = @"F I N A N C I A L S((.|\n)+)FINANCIALS SECTOR TOTAL";
             var matchText = Regex.Match(pdfText, pattern).Value;
             var sector = indeces.SingleOrDefault(index => index.Symbol == Financials);
             var stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
-            pattern = @"I N D U S T R I A L((.|\n)+)INDUSTRIAL SECTOR TOTAL VOLUME";
+            pattern = @"I N D U S T R I A L((.|\n)+)INDUSTRIAL SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Industrials);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
-            pattern = @"H O L D I N G   F I R M S((.|\n)+)HOLDING FIRMS SECTOR TOTAL VOLUME";
+            pattern = @"H O L D I N G  F I R M S((.|\n)+)HOLDING FIRMS SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Holding);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
-            pattern = @"P R O P E R T Y((.|\n)+)PROPERTY SECTOR TOTAL VOLUME";
+            pattern = @"P R O P E R T Y((.|\n)+)PROPERTY SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Property);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
-            pattern = @"S E R V I C E S((.|\n)+)SERVICES SECTOR TOTAL VOLUME";
+            pattern = @"S E R V I C E S((.|\n)+)SERVICES SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Services);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
-            pattern = @"M I N I N G   &   O I L((.|\n)+)MINING & OIL SECTOR TOTAL VOLUME";
+            pattern = @"M I N I N G  &  O I L((.|\n)+)MINING & OIL SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
             sector = indeces.SingleOrDefault(index => index.Symbol == Mining);
             stocksInSector = GetStocks(matchText);
