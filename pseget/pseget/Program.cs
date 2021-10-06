@@ -106,17 +106,26 @@ namespace pseget
             var client = new HttpClient();
             //var pdfFile = $"stockQuotes_{reportDate:MMddyyyy}.pdf";
             //new file name: August 24, 2021-EOD1.pdf
-            var pdfFile = reportDate.ToString("MMMM dd, yyyy") + "-EOD1.pdf";// "August 24, 2021-EOD1.pdf";
+            var pdfFile = reportDate.ToString("MMMM dd, yyyy") + "-EOD.pdf";// "August 24, 2021-EOD1.pdf";
             var downloadUrl = Path.Combine(pseGetOption.SourceUrl, pdfFile);
 
             Log.Information($"Downloading {downloadUrl}...");
 
             var response = await client.GetAsync(downloadUrl);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                Log.Information($"I can't find {downloadUrl}. Trying again...");
+                pdfFile = reportDate.ToString("MMMM dd, yyyy") + "-EOD1.pdf";// "August 24, 2021-EOD1.pdf";
+                downloadUrl = Path.Combine(pseGetOption.SourceUrl, pdfFile);
+
+                Log.Information($"Downloading {downloadUrl}...");
+            }            
+            
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 Log.Warning(response.ReasonPhrase);
                 return null;
-            }
+            }            
             return await response.Content.ReadAsByteArrayAsync();
         }
     }
