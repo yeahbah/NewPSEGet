@@ -6,7 +6,7 @@ namespace pseget.Models
     public class PseDocumentModel
     {
         public IEnumerable<StockModel> Stocks { get; set; }
-        public DateTime TradeDate { get; set; }
+        public DateOnly TradeDate { get; set; }
 
         //public int NumAdvance { get; set; }
 

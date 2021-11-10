@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -46,8 +45,8 @@ namespace pseget
         static async Task Run(Options option)
         {
             Program.pseGetOption = option;
-            var fromDate = DateTime.Today;
-            var toDate = DateTime.Today;
+            var fromDate = DateOnly.FromDateTime(DateTime.Today);
+            var toDate = DateOnly.FromDateTime(DateTime.Today);
 
             if (!option.DateRange.Equals("today", StringComparison.OrdinalIgnoreCase))
             {
@@ -56,16 +55,16 @@ namespace pseget
                 {
                     throw new Exception($"{option.DateRange} is not a valid date range.");
                 }
-                fromDate = DateTime.Parse(dateRange[0].Trim());
-                toDate = DateTime.Parse(dateRange[1].Trim());
-                if (toDate.Date < fromDate.Date)
+                fromDate = DateOnly.Parse(dateRange[0].Trim());
+                toDate = DateOnly.Parse(dateRange[1].Trim());
+                if (toDate < fromDate)
                 {
                     throw new Exception("Invalid date range.");
                 }
             }
 
             var downloadDate = fromDate;
-            while (downloadDate.Date <= toDate.Date)
+            while (downloadDate <= toDate)
             {
                 var pdfBytes = await DownloadReport(downloadDate);
                 if (pdfBytes != null)                
@@ -80,7 +79,7 @@ namespace pseget
             Log.Information("Download complete.");           
         }
 
-        private static async Task ConvertPdfBytesToCsv(byte[] pdfBytes, DateTime tradeDate)
+        private static async Task ConvertPdfBytesToCsv(byte[] pdfBytes, DateOnly tradeDate)
         {
             var pdfStream = new MemoryStream(pdfBytes);
 
@@ -101,7 +100,7 @@ namespace pseget
             await Converter.ToCsv(pseModel, fileName, Program.pseGetOption.IncludeStockName);
         }
 
-        private static async Task<byte[]> DownloadReport(DateTime reportDate)
+        private static async Task<byte[]> DownloadReport(DateOnly reportDate)
         {
             var client = new HttpClient();
             //var pdfFile = $"stockQuotes_{reportDate:MMddyyyy}.pdf";
