@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace pseget.Test
+namespace Pseget.Test
 {
     public class PseReportParserTest
     {

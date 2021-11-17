@@ -1,30 +1,31 @@
-﻿using pseget.Models;
-using Serilog;
+﻿using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Pseget.Models;
 
-namespace pseget
+namespace Pseget
 {
     public interface IPseReportParser
     {
-        PseDocumentModel Parse(string pdfText);
+        PseDocumentModel Parse(string pdfText, DateOnly tradeDate);
     }
-
     
     public class PseReportParser : IPseReportParser
     {
-        public PseDocumentModel Parse(string pdfText)
+        public PseDocumentModel Parse(string pdfText, DateOnly tradeDate)
         {
             var stocks = GetStocks(pdfText).ToList();
-            var indeces = GetIndeces(pdfText);
-            CalculateIndexNfb(indeces, pdfText);
-            stocks.AddRange(indeces);
+            var indexes = GetIndexes(pdfText)
+                .ToArray();
+            CalculateIndexNfb(indexes, pdfText);
+            stocks.AddRange(indexes);
             return new PseDocumentModel
             {
-                Stocks = stocks
+                Stocks = stocks,
+                TradeDate = tradeDate
             };
         }
 
@@ -33,7 +34,7 @@ namespace pseget
             // match groups
             // group 0: matched line, ASIA UNITED AUB 46 46.9 46.75 46.75 46.05 46.05 6,000 277,200 -            
             // group 1: symbol
-            var pattern = @"(\b[A-Z0-9]+\b)\s+((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){9}(-?)";
+            const string pattern = @"(\b[A-Z0-9]+\b)\s+((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){9}(-?)";
             var matches = new Regex(pattern).Matches(pdfText);
             if (matches.Count == 0) return null;
 
@@ -58,16 +59,15 @@ namespace pseget
                     .ToArray();
 
                 // skip stocks that did not open
-                if (numbers[6] == "-") continue;                
+                if (numbers[6] == "-") continue;
 
-                decimal amount = 0;
                 Log.Debug(line);
 
                 var stock = new StockModel
                 {
                     Description = GetStockName(stockSymbol, pdfText),
                     Symbol = stockSymbol,
-                    NetForeignBuy = decimal.TryParse(numbers[0], NumberStyles.Any, null, out amount) ? amount : 0,
+                    NetForeignBuy = decimal.TryParse(numbers[0], NumberStyles.Any, null, out var amount) ? amount : 0,
                     Value = decimal.Parse(numbers[1], NumberStyles.Any),
                     Volume = ulong.Parse(numbers[2], NumberStyles.Any),
                     Close = decimal.Parse(numbers[3], NumberStyles.Any),
@@ -80,9 +80,9 @@ namespace pseget
             return result;
         }
 
-        private IEnumerable<StockModel> GetIndeces(string pdfText)
+        private static IEnumerable<StockModel> GetIndexes(string pdfText)
         {
-            var pattern = @"(Financials|Industrials|Holding Firms|Property|Services|Mining & Oil|PSEI|All Shares)\s+(((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){8}|((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){6})";
+            const string pattern = @"(Financials|Industrials|Holding Firms|Property|Services|Mining & Oil|PSEI|All Shares)\s+(((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){8}|((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){6})";
             var matches = Regex.Matches(pdfText, pattern);
             if (matches.Count != 8) throw new Exception("Unable to parse index values");
 
@@ -147,9 +147,9 @@ namespace pseget
             return result;
         }
 
-        private decimal GetNetForeign(string pdfText)
+        private static decimal GetNetForeign(string pdfText)
         {
-            var pattern = @"(NET FOREIGN BUYING/\(SELLING\)\: Php)\s+(\S+)";
+            const string pattern = @"(NET FOREIGN BUYING/\(SELLING\)\: Php)\s+(\S+)";
             var match = Regex.Match(pdfText, pattern);
             if (!match.Success) throw new Exception("Unable to find NFB");
 
@@ -165,7 +165,7 @@ namespace pseget
         private const string AllShares = "^ALLSHARES";
         private const string PSEi = "^PSEi";
 
-        private string GetIndexSymbol(string indexName)
+        private static string GetIndexSymbol(string indexName)
         {
             return indexName switch
             {
@@ -181,60 +181,58 @@ namespace pseget
             };
         }
 
-        private string GetStockName(string stockSymbol, string pdfText)
+        private static string GetStockName(string stockSymbol, string pdfText)
         {
             var pattern = @"(.+)\s+(" + stockSymbol + @")\s+((((\(?\d{1,3}(,\d{3})*(\.\d+)?\)?))|-)\s|\n){9}";
             var match = Regex.Match(pdfText, pattern);
-            if (!match.Success) return string.Empty; // maybe throw exception?
-
-            return match.Groups[1].Value;
-
+            return !match.Success ? string.Empty : match.Groups[1].Value;
         }
 
-        private void CalculateIndexNfb(IEnumerable<StockModel> indeces, string pdfText)
+        private void CalculateIndexNfb(IEnumerable<StockModel> indexes, string pdfText)
         {            
             var pattern = @"F I N A N C I A L S((.|\n)+)FINANCIALS SECTOR TOTAL";
             var matchText = Regex.Match(pdfText, pattern).Value;
-            var sector = indeces.SingleOrDefault(index => index.Symbol == Financials);
+            var stockModels = indexes as StockModel[] ?? indexes.ToArray();
+            
+            var sector = stockModels.SingleOrDefault(index => index.Symbol == Financials);
             var stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"I N D U S T R I A L((.|\n)+)INDUSTRIAL SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
-            sector = indeces.SingleOrDefault(index => index.Symbol == Industrials);
+            sector = stockModels.SingleOrDefault(index => index.Symbol == Industrials);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"H O L D I N G  F I R M S((.|\n)+)HOLDING FIRMS SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
-            sector = indeces.SingleOrDefault(index => index.Symbol == Holding);
+            sector = stockModels.SingleOrDefault(index => index.Symbol == Holding);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"P R O P E R T Y((.|\n)+)PROPERTY SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
-            sector = indeces.SingleOrDefault(index => index.Symbol == Property);
+            sector = stockModels.SingleOrDefault(index => index.Symbol == Property);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"S E R V I C E S((.|\n)+)SERVICES SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
-            sector = indeces.SingleOrDefault(index => index.Symbol == Services);
+            sector = stockModels.SingleOrDefault(index => index.Symbol == Services);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
 
             pattern = @"M I N I N G  &  O I L((.|\n)+)MINING & OIL SECTOR TOTAL";
             matchText = Regex.Match(pdfText, pattern).Value;
-            sector = indeces.SingleOrDefault(index => index.Symbol == Mining);
+            sector = stockModels.SingleOrDefault(index => index.Symbol == Mining);
             stocksInSector = GetStocks(matchText);
             sector.NetForeignBuy = stocksInSector
                 .Sum(stock => stock.NetForeignBuy);
         }
     }
-
 }

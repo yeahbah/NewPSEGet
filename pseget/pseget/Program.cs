@@ -10,13 +10,13 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace pseget
+namespace Pseget
 {
-    class Program
+    internal static class Program
     {
         private static Options pseGetOption;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -42,7 +42,7 @@ namespace pseget
                 });
         }
 
-        static async Task Run(Options option)
+        private static async Task Run(Options option)
         {
             Program.pseGetOption = option;
             var fromDate = DateOnly.FromDateTime(DateTime.Today);
@@ -93,9 +93,8 @@ namespace pseget
                 sb.Append(pdfText);
             }
             var parser = new PseReportParser();
-            var pseModel = parser.Parse(sb.ToString());
-            pseModel.TradeDate = tradeDate;            
-
+            var pseModel = parser.Parse(sb.ToString(), tradeDate);
+            
             var fileName = Path.Combine(Program.pseGetOption.OutputLocation, $"stockQuotes_{pseModel.TradeDate:MMddyyyy}.csv");
             await Converter.ToCsv(pseModel, fileName, Program.pseGetOption.IncludeStockName);
         }
@@ -111,21 +110,21 @@ namespace pseget
             Log.Information($"Downloading {downloadUrl}...");
 
             var response = await client.GetAsync(downloadUrl);
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            switch (response.StatusCode)
             {
-                Log.Information($"I can't find {downloadUrl}. Trying again...");
-                pdfFile = reportDate.ToString("MMMM dd, yyyy") + "-EOD1.pdf";// "August 24, 2021-EOD1.pdf";
-                downloadUrl = Path.Combine(pseGetOption.SourceUrl, pdfFile);
+                case HttpStatusCode.NotFound:
+                    Log.Information($"I can't find {downloadUrl}. Trying again...");
+                    pdfFile = reportDate.ToString("MMMM dd, yyyy") + "-EOD1.pdf";// "August 24, 2021-EOD1.pdf";
+                    downloadUrl = Path.Combine(pseGetOption.SourceUrl, pdfFile);
 
-                Log.Information($"Downloading {downloadUrl}...");
-            }            
-            
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                Log.Warning(response.ReasonPhrase);
-                return null;
-            }            
-            return await response.Content.ReadAsByteArrayAsync();
+                    Log.Information($"Downloading {downloadUrl}...");
+                    break;
+                case HttpStatusCode.OK:
+                    return await response.Content.ReadAsByteArrayAsync();
+            }
+
+            Log.Warning(response.ReasonPhrase);
+            return null;
         }
     }
 }

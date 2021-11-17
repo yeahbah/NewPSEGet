@@ -1,8 +1,8 @@
 ﻿using CommandLine;
 
-namespace pseget
+namespace Pseget
 {
-    public class Options
+    public sealed class Options
     {
         [Option('r', "range", HelpText = "Specify the date range. e.g. -r 5/6/2020:7/1/2020. Use -r today to download today's csv file.", Required = true)]
         public string DateRange { get; set; }

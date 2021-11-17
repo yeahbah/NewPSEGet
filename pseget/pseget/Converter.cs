@@ -1,12 +1,11 @@
-﻿using iText.Kernel.Geom;
-using pseget.Models;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Pseget.Models;
 
-namespace pseget
+namespace Pseget
 {
     public static class Converter
     {        
@@ -26,8 +25,8 @@ namespace pseget
                 line += $",{tradeDate},{ stock.Open},{ stock.High},{ stock.Low},{ stock.Close},{ stock.Volume},{nfb}";
                 sb.AppendLine(line);
             }
-            var indeces = pseModel.Stocks.Where(stock => stock.Symbol.Contains("^"));
-            foreach(var index in indeces)
+            var indexes = pseModel.Stocks.Where(stock => stock.Symbol.Contains("^"));
+            foreach(var index in indexes)
             {
                 var line = $"{index.Symbol}";
                 if (includeStockName)
@@ -43,8 +42,5 @@ namespace pseget
 
             await File.WriteAllTextAsync(fileName, sb.ToString());
         }
-
-        
-
     }
 }

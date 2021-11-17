@@ -1,4 +1,4 @@
-﻿namespace pseget.Models
+﻿namespace Pseget.Models
 {
     public class StockModel
     {
